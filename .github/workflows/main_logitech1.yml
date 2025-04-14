@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy JAR app to Azure Web App - logitech1
+name: Build and deploy ASP app to Azure Web App - logitech1
 
 on:
   push:
@@ -18,20 +18,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java version
-        uses: actions/setup-java@v4
-        with:
-          java-version: '8'
-          distribution: 'microsoft'
+      - name: Setup MSBuild path
+        uses: microsoft/setup-msbuild@v1.0.2
 
-      - name: Build with Maven
-        run: mvn clean install
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.5
+
+      - name: Restore NuGet packages
+        run: nuget restore
+
+      - name: Publish to folder
+        run: msbuild /nologo /verbosity:m /t:Build /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="\published\"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: java-app
-          path: '${{ github.workspace }}/target/*.jar'
+          name: ASP-app
+          path: '/published/**'
 
   deploy:
     runs-on: windows-latest
@@ -47,14 +50,14 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: java-app
+          name: ASP-app
       
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_59CE6F0555104D5AABB60CD1C090F4E1 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F5A38E21B5BC4A5CA9FA588BFF3DED6A }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_CA1533D4F38E4BBBBB1CF38C318F92D8 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_AEF131FEA26B4946924212DB450E166A }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A3DD1E3CA97B4A5DAFB65B7985FAFE8C }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_1AE4D383528447D2A76414D21A2D5405 }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -62,5 +65,5 @@ jobs:
         with:
           app-name: 'logitech1'
           slot-name: 'Production'
-          package: '*.jar'
+          package: .
           
